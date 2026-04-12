@@ -148,8 +148,14 @@ func (sf *Server) handleConnect(ctx context.Context, writer io.Writer, request *
 	}
 	defer target.Close() // nolint: errcheck
 
+	// handle if target is unix socket
+	bindAddr := target.LocalAddr()
+	if bindAddr.Network() == "unix" {
+		bindAddr = &net.TCPAddr{IP: request.DestAddr.IP, Port: request.DestAddr.Port}
+	}
+
 	// Send success
-	if err := SendReply(writer, statute.RepSuccess, target.LocalAddr()); err != nil {
+	if err := SendReply(writer, statute.RepSuccess, bindAddr); err != nil {
 		return fmt.Errorf("failed to send reply, %v", err)
 	}
 
