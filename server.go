@@ -65,6 +65,9 @@ type Server struct {
 	userConnectMiddlewares   MiddlewareChain
 	userBindMiddlewares      MiddlewareChain
 	userAssociateMiddlewares MiddlewareChain
+
+	// hook after reply success
+	hookReplySuccess func(ctx context.Context, conn net.Conn, request *Request) (net.Conn, *Request, error)
 }
 
 // NewServer creates a new Server
@@ -181,7 +184,8 @@ func (sf *Server) ServeConn(conn net.Conn) error {
 
 // authenticate is used to handle connection authentication
 func (sf *Server) authenticate(conn io.Writer, bufConn io.Reader,
-	userAddr string, methods []byte) (*AuthContext, error) {
+	userAddr string, methods []byte,
+) (*AuthContext, error) {
 	// Select a usable method
 	for _, auth := range sf.authMethods {
 		for _, method := range methods {

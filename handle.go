@@ -153,6 +153,14 @@ func (sf *Server) handleConnect(ctx context.Context, writer io.Writer, request *
 		return fmt.Errorf("failed to send reply, %v", err)
 	}
 
+	// hook after reply success state to override connection before relay proxy
+	if sf.hookReplySuccess != nil {
+		target, request, err = sf.hookReplySuccess(ctx, target, request)
+		if err != nil {
+			return fmt.Errorf("failed to hook after reply success: %v", err)
+		}
+	}
+
 	// Start proxying
 	errCh := make(chan error, 2)
 	sf.goFunc(func() { errCh <- sf.Proxy(target, request.Reader) })
@@ -253,7 +261,8 @@ func (sf *Server) handleAssociate(ctx context.Context, writer io.Writer, request
 			}
 
 			// check src addr whether equal requst.DestAddr
-			srcEqual := ((request.DestAddr.IP.IsUnspecified()) || request.DestAddr.IP.Equal(srcAddr.IP)) && (request.DestAddr.Port == 0 || request.DestAddr.Port == srcAddr.Port) //nolint:lll
+			srcEqual := ((request.DestAddr.IP.IsUnspecified()) || request.DestAddr.IP.Equal(srcAddr.IP)) &&
+				(request.DestAddr.Port == 0 || request.DestAddr.Port == srcAddr.Port) //nolint:lll
 			if !srcEqual {
 				continue
 			}

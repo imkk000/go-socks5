@@ -175,3 +175,10 @@ func WithUseBindIpBaseResolveAsUdpAddr(b bool) Option {
 		s.useBindIpBaseResolveAsUdpAddr = b
 	}
 }
+
+// WithAfterReplySuccess is hooked after reply success to override connection and peek TLS handshake packet
+func WithHookReplySuccess(h func(ctx context.Context, conn net.Conn, request *Request) (net.Conn, *Request, error)) Option {
+	return func(s *Server) {
+		s.hookReplySuccess = h
+	}
+}
