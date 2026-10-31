@@ -117,12 +117,18 @@ func (sf *Datagram) values(hasData bool) (bs []byte) {
 		bs = make([]byte, 0, length)
 	}
 
-	bs = append(bs, byte(sf.RSV<<8), byte(sf.RSV), sf.Frag, sf.DstAddr.AddrType)
+	bs = append(bs, 0, 0, sf.Frag, sf.DstAddr.AddrType)
+	binary.BigEndian.PutUint16(bs[:2], sf.RSV)
 	if sf.DstAddr.AddrType == ATYPDomain {
-		bs = append(bs, byte(len(sf.DstAddr.FQDN)))
+		addrLen := len(addr)
+		if addrLen > math.MaxUint8 {
+			panic("destination host name too long")
+		}
+		bs = append(bs, uint8(addrLen))
 	}
 	bs = append(bs, addr...)
-	bs = append(bs, byte(sf.DstAddr.Port>>8), byte(sf.DstAddr.Port))
+	bs = append(bs, 0, 0)
+	binary.BigEndian.PutUint16(bs[len(bs)-2:], uint16(sf.DstAddr.Port&math.MaxUint16))
 	if hasData {
 		bs = append(bs, sf.Data...)
 	}
